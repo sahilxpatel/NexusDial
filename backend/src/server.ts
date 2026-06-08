@@ -2,6 +2,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { app } from './app';
 import { config } from './config/env';
+import { setupSockets } from './sockets/index';
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -10,13 +11,8 @@ const io = new Server(httpServer, {
   },
 });
 
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
+app.set('io', io);
+setupSockets(io);
 
 httpServer.listen(config.port, () => {
   console.log(`Server listening on port ${config.port}`);
