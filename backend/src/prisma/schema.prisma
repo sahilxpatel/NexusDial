@@ -8,67 +8,128 @@ datasource db {
 }
 
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users    User[]
-  contacts Contact[]
-  calls    Call[]
+  id           String    @id @default(cuid())
+  businessName String
+  mobile       String    @unique
+  planTier     PlanTier  @default(BASIC)
+  createdAt    DateTime  @default(now())
+  // relations
+  virtualNumbers VirtualNumber[]
+  contacts       Contact[]
+  callRecords    CallRecord[]
+  walletTxs      WalletTx[]
+  refreshTokens  RefreshToken[]
 }
 
-model User {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  email     String   @unique
-  password  String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  calls Call[]
+model VirtualNumber {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  e164Number    String    @unique
+  label         String    @default("")
+  isActive      Boolean   @default(true)
+  provisionedAt DateTime  @default(now())
+  callRecords   CallRecord[]
+  @@index([tenantId])
 }
 
 model NumberPool {
-  id          String   @id @default(uuid())
-  phoneNumber String   @unique
-  provider    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  e164Number String   @unique
+  isAssigned Boolean  @default(false)
+  assignedAt DateTime?
 }
 
 model Contact {
-  id        String  @id @default(uuid())
-  tenantId  String
-  tenant    Tenant  @relation(fields: [tenantId], references: [id])
-  firstName String
-  lastName  String?
-  phone     String
-  email     String?
-
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  calls Call[]
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  phoneNumber String
+  name        String?
+  tags        String[]
+  firstSeenAt DateTime @default(now())
+  callCount   Int      @default(0)
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  callRecords CallRecord[]
+  @@unique([tenantId, phoneNumber])
+  @@index([tenantId])
 }
 
-model Call {
-  id        String   @id @default(uuid())
+model CallRecord {
+  id              String     @id @default(cuid())
+  tenantId        String
+  tenant          Tenant     @relation(fields: [tenantId], references: [id])
+  virtualNumberId String
+  virtualNumber   VirtualNumber @relation(fields: [virtualNumberId], references: [id])
+  contactId       String?
+  contact         Contact?   @relation(fields: [contactId], references: [id])
+  direction       Direction
+  status          CallStatus
+  durationSec     Int        @default(0)
+  recordingKey    String?
+  aiSummary       String?
+  createdAt       DateTime   @default(now())
+  intelligenceJob IntelligenceJob?
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+}
+
+model IntelligenceJob {
+  id            String    @id @default(cuid())
+  callRecordId  String    @unique
+  callRecord    CallRecord @relation(fields: [callRecordId], references: [id])
+  status        JobStatus @default(PENDING)
+  transcript    String?
+  extractedData Json?
+  processingMs  Int?
+  createdAt     DateTime  @default(now())
+}
+
+model WalletTx {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  type        TxType
+  amountPaise Int
+  description String
+  createdAt   DateTime @default(now())
+  @@index([tenantId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  contactId String?
-  contact   Contact? @relation(fields: [contactId], references: [id])
-
-  direction String
-  status    String
-  duration  Int
-
+  token     String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+enum PlanTier {
+  BASIC
+  PRO
+}
+
+enum Direction {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallStatus {
+  ANSWERED
+  MISSED
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+enum TxType {
+  CREDIT
+  DEBIT
 }
