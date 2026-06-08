@@ -28,4 +28,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+import { errorHandler } from './middleware/errorHandler';
+app.use(errorHandler);
+
 export { app };

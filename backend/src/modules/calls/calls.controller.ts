@@ -1,19 +1,22 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../utils/logger';
 import { intelligenceQueue } from '../../lib/queue';
 import { Server } from 'socket.io';
+import { validateE164 } from '../../utils/validators';
 
 const SimulateCallSchema = z.object({
   virtualNumberId: z.string().cuid(),
-  callerMobile: z.string().regex(/^\+[1-9]\d{6,14}$/),
+  callerMobile: z.string().refine(validateE164, 'Invalid E.164 format'),
   direction: z.enum(['INBOUND', 'OUTBOUND']),
   durationSec: z.number().int().min(0).max(3600),
   hasVoicemail: z.boolean(),
 });
 
-export const simulateCall = async (req: Request, res: Response): Promise<void> => {
+import { AppError } from '../../middleware/errorHandler';
+
+export const simulateCall = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const tenantId = req.tenant!.id;
     const body = SimulateCallSchema.parse(req.body);
@@ -23,8 +26,10 @@ export const simulateCall = async (req: Request, res: Response): Promise<void> =
     });
 
     if (!virtualNumber) {
-      res.status(404).json({ message: 'Virtual number not found or does not belong to tenant' });
-      return;
+      const err = new Error('Virtual number not found or does not belong to tenant') as AppError;
+      err.statusCode = 404;
+      err.code = 'ND_4043';
+      return next(err);
     }
 
     let contact = await prisma.contact.findUnique({

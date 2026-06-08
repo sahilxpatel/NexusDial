@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { redis } from '../../lib/redis';
 import { prisma } from '../../lib/prisma';
@@ -6,13 +6,14 @@ import { config } from '../../config/env';
 import { logger } from '../../utils/logger';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { validateE164 } from '../../utils/validators';
 
 const mobileSchema = z.object({
-  mobile: z.string().regex(/^\+[1-9]\d{1,14}$/, 'Invalid E.164 format')
+  mobile: z.string().refine(validateE164, 'Invalid E.164 format')
 });
 
 const verifySchema = z.object({
-  mobile: z.string().regex(/^\+[1-9]\d{1,14}$/, 'Invalid E.164 format'),
+  mobile: z.string().refine(validateE164, 'Invalid E.164 format'),
   otp: z.string().length(6)
 });
 
@@ -50,14 +51,25 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
+import { AppError } from '../../middleware/errorHandler';
+
+export const verifyOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { mobile, otp } = verifySchema.parse(req.body);
 
     const storedOtp = await redis.get(`otp:${mobile}`);
-    if (!storedOtp || storedOtp !== otp) {
-      res.status(400).json({ message: 'Invalid or expired OTP' });
-      return;
+    if (!storedOtp) {
+      const err = new Error('OTP expired') as AppError;
+      err.statusCode = 400;
+      err.code = 'ND_4003';
+      return next(err);
+    }
+    
+    if (storedOtp !== otp) {
+      const err = new Error('Invalid OTP') as AppError;
+      err.statusCode = 400;
+      err.code = 'ND_4002';
+      return next(err);
     }
 
     await redis.del(`otp:${mobile}`);

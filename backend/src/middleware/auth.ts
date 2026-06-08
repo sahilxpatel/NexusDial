@@ -2,13 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { config } from '../config/env';
+import { AppError } from './errorHandler';
 
 export const validateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ code: 'ND_4001', message: 'Unauthorized' });
-      return;
+      const err = new Error('Unauthorized') as AppError;
+      err.statusCode = 401;
+      err.code = 'ND_4001';
+      return next(err);
     }
 
     const token = authHeader.split(' ')[1];
@@ -19,13 +22,18 @@ export const validateToken = async (req: Request, res: Response, next: NextFunct
     });
 
     if (!tenant) {
-      res.status(401).json({ code: 'ND_4001', message: 'Unauthorized' });
-      return;
+      const err = new Error('Unauthorized') as AppError;
+      err.statusCode = 401;
+      err.code = 'ND_4001';
+      return next(err);
     }
 
     req.tenant = tenant;
     next();
   } catch (error) {
-    res.status(401).json({ code: 'ND_4001', message: 'Unauthorized' });
+    const err = new Error('Unauthorized') as AppError;
+    err.statusCode = 401;
+    err.code = 'ND_4001';
+    next(err);
   }
 };
