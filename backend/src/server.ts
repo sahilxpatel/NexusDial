@@ -19,3 +19,5 @@ httpServer.listen(config.port, () => {
 });
 
 export { httpServer, io };
+
+import './workers/intelligence.worker';

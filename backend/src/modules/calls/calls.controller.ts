@@ -66,7 +66,14 @@ export const simulateCall = async (req: Request, res: Response): Promise<void> =
           status: 'PENDING'
         }
       });
-      await intelligenceQueue.add('process-voicemail', { callRecordId: callRecord.id, tenantId });
+      await intelligenceQueue.add('process-voicemail', { 
+        callRecordId: callRecord.id, 
+        tenantId,
+        callerMobile: body.callerMobile
+      }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 }
+      });
     }
 
     const io: Server = req.app.get('io');
