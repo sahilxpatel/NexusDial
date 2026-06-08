@@ -74,6 +74,11 @@ npm install && npx expo start
 > **Physical Device Note:** Open `mobile/.env` and set `API_URL=http://YOUR_MACHINE_IP:3000/api`.
 > Your machine and phone must be on the same WiFi. Find your IP with `ifconfig` (Mac/Linux) or `ipconfig` (Windows).
 
+### 3. Test Credentials (Login)
+When the mobile app launches, use the following credentials to securely log in:
+- **Mobile Number:** Any valid E.164 number (e.g., `+19999999999` or your own number with country code like `+919876543210`)
+- **OTP:** `123456` (Mocked for testing environments)
+
 ---
 
 ## Testing
