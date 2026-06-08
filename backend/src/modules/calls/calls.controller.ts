@@ -18,11 +18,10 @@ import { AppError } from '../../middleware/errorHandler';
 
 export const simulateCall = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const tenantId = (req as any).tenant!.id;
     const body = SimulateCallSchema.parse(req.body);
 
     const virtualNumber = await prisma.virtualNumber.findFirst({
-      where: { id: body.virtualNumberId, tenantId }
+      where: { id: body.virtualNumberId, tenantId: req.tenant.id }
     });
 
     if (!virtualNumber) {
@@ -33,13 +32,13 @@ export const simulateCall = async (req: Request, res: Response, next: NextFuncti
     }
 
     let contact = await prisma.contact.findUnique({
-      where: { tenantId_phoneNumber: { tenantId, phoneNumber: body.callerMobile } }
+      where: { tenantId_phoneNumber: { tenantId: req.tenant.id, phoneNumber: body.callerMobile } }
     });
 
     if (!contact) {
       contact = await prisma.contact.create({
         data: {
-          tenantId,
+          tenantId: req.tenant.id,
           phoneNumber: body.callerMobile,
           callCount: 1,
         }
@@ -55,7 +54,7 @@ export const simulateCall = async (req: Request, res: Response, next: NextFuncti
 
     const callRecord = await prisma.callRecord.create({
       data: {
-        tenantId,
+        tenantId: req.tenant.id,
         virtualNumberId: body.virtualNumberId,
         contactId: contact.id,
         direction: body.direction,
@@ -73,7 +72,7 @@ export const simulateCall = async (req: Request, res: Response, next: NextFuncti
       });
       await intelligenceQueue.add('process-voicemail', { 
         callRecordId: callRecord.id, 
-        tenantId,
+        tenantId: req.tenant.id,
         callerMobile: body.callerMobile
       }, {
         attempts: 3,
@@ -83,7 +82,7 @@ export const simulateCall = async (req: Request, res: Response, next: NextFuncti
 
     const io: Server = req.app.get('io');
     if (io) {
-      io.to(tenantId).emit('call_event', callRecord);
+      io.to(req.tenant.id).emit('call_event', callRecord);
     }
 
     res.json(callRecord);
@@ -99,13 +98,11 @@ export const simulateCall = async (req: Request, res: Response, next: NextFuncti
 
 export const getCalls = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = (req as any).tenant!.id;
-    
     // Simple pagination if needed, or just return top 50
     const take = parseInt(req.query.take as string) || 50;
 
     const calls = await prisma.callRecord.findMany({
-      where: { tenantId },
+      where: { tenantId: req.tenant.id },
       orderBy: { createdAt: 'desc' },
       take,
       include: {

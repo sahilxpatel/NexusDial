@@ -4,9 +4,8 @@ import { logger } from '../../utils/logger';
 
 export const getContacts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = (req as any).tenant!.id;
     const contacts = await prisma.contact.findMany({
-      where: { tenantId, isDeleted: false },
+      where: { tenantId: req.tenant.id, isDeleted: false },
       orderBy: { firstSeenAt: 'desc' }
     });
     res.json(contacts);
@@ -18,10 +17,9 @@ export const getContacts = async (req: Request, res: Response): Promise<void> =>
 
 export const getContactById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = (req as any).tenant!.id;
     const id = req.params.id as string;
     const contact = await prisma.contact.findFirst({
-      where: { id, tenantId, isDeleted: false }
+      where: { id, tenantId: req.tenant.id, isDeleted: false }
     });
     if (!contact) {
       res.status(404).json({ message: 'Contact not found' });
@@ -36,12 +34,11 @@ export const getContactById = async (req: Request, res: Response): Promise<void>
 
 export const getContactTimeline = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = (req as any).tenant!.id;
     const id = req.params.id as string;
     
     // Ensure contact belongs to tenant
     const contact = await prisma.contact.findFirst({
-      where: { id, tenantId }
+      where: { id, tenantId: req.tenant.id }
     });
 
     if (!contact) {
@@ -50,7 +47,7 @@ export const getContactTimeline = async (req: Request, res: Response): Promise<v
     }
 
     const calls = await prisma.callRecord.findMany({
-      where: { tenantId, contactId: id },
+      where: { tenantId: req.tenant.id, contactId: id },
       orderBy: { createdAt: 'desc' },
       include: {
         virtualNumber: { select: { label: true, e164Number: true } },
@@ -67,12 +64,11 @@ export const getContactTimeline = async (req: Request, res: Response): Promise<v
 
 export const updateContact = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = (req as any).tenant!.id;
     const id = req.params.id as string;
     const { name, tags } = req.body;
 
     const existing = await prisma.contact.findFirst({
-      where: { id, tenantId, isDeleted: false }
+      where: { id, tenantId: req.tenant.id, isDeleted: false }
     });
 
     if (!existing) {
@@ -97,11 +93,10 @@ export const updateContact = async (req: Request, res: Response): Promise<void> 
 
 export const deleteContact = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = (req as any).tenant!.id;
     const id = req.params.id as string;
 
     const existing = await prisma.contact.findFirst({
-      where: { id, tenantId, isDeleted: false }
+      where: { id, tenantId: req.tenant.id, isDeleted: false }
     });
 
     if (!existing) {
