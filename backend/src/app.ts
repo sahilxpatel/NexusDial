@@ -3,6 +3,8 @@ import { config } from './config/env';
 import authRoutes from './modules/auth/auth.routes';
 import numbersRoutes from './modules/numbers/numbers.routes';
 import simulateRoutes from './modules/calls/calls.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
+import contactsRoutes from './modules/contacts/contacts.routes';
 import { generalLimiter } from './middleware/rateLimiter';
 import { validateToken } from './middleware/auth';
 
@@ -21,7 +23,10 @@ app.use(generalLimiter);
 
 // Module routes
 app.use('/api/numbers', numbersRoutes);
-app.use('/api/simulate', simulateRoutes);
+app.use('/api/calls', simulateRoutes); // calls.routes has both / and /call
+app.use('/api/simulate', simulateRoutes); // Keep /simulate/call working for mobile app
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/contacts', contactsRoutes);
 
 // Basic health check route
 app.get('/health', (req, res) => {

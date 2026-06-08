@@ -28,7 +28,7 @@ export const validateToken = async (req: Request, res: Response, next: NextFunct
       return next(err);
     }
 
-    req.tenant = tenant;
+    (req as any).tenant = tenant;
     next();
   } catch (error) {
     const err = new Error('Unauthorized') as AppError;

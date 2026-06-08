@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import * as Keychain from 'react-native-keychain';
+import * as SecureStore from 'expo-secure-store';
 
 interface AuthState {
   accessToken: string | null;
@@ -13,8 +13,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   tenantId: null,
 
   setTokens: async (access: string, refresh: string) => {
-    // Zero AsyncStorage usage. Persist using Keychain securely.
-    await Keychain.setGenericPassword('tokens', JSON.stringify({ access, refresh }));
+    // Zero AsyncStorage usage. Persist using SecureStore securely.
+    await SecureStore.setItemAsync('tokens', JSON.stringify({ access, refresh }));
     
     // Minimal decode to just get tenantId from JWT (not verifying signature on client, just parsing payload)
     let parsedTenantId = null;
@@ -31,7 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearTokens: async () => {
-    await Keychain.resetGenericPassword();
+    await SecureStore.deleteItemAsync('tokens');
     set({ accessToken: null, tenantId: null });
   },
 }));

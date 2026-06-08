@@ -18,7 +18,7 @@ import { AppError } from '../../middleware/errorHandler';
 
 export const simulateCall = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const tenantId = req.tenant!.id;
+    const tenantId = (req as any).tenant!.id;
     const body = SimulateCallSchema.parse(req.body);
 
     const virtualNumber = await prisma.virtualNumber.findFirst({
@@ -94,5 +94,30 @@ export const simulateCall = async (req: Request, res: Response, next: NextFuncti
       logger.error('simulateCall error', error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
+  }
+};
+
+export const getCalls = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = (req as any).tenant!.id;
+    
+    // Simple pagination if needed, or just return top 50
+    const take = parseInt(req.query.take as string) || 50;
+
+    const calls = await prisma.callRecord.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take,
+      include: {
+        contact: { select: { name: true, phoneNumber: true } },
+        virtualNumber: { select: { label: true, e164Number: true } },
+        intelligenceJob: { select: { status: true } },
+      }
+    });
+
+    res.json(calls);
+  } catch (error) {
+    logger.error('getCalls error', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };

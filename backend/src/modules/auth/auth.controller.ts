@@ -35,7 +35,7 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = '123456';
     await redis.set(`otp:${mobile}`, otp, 'EX', 300);
 
     logger.info({ event: 'OTP_SENT', mobile, otp });

@@ -3,13 +3,10 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
 import { colors, spacing, typography } from '../theme';
-import { Phone, Users } from 'lucide-react-native';
+import { Phone, Users, PhoneOff, UserPlus } from 'lucide-react-native';
 
 const fetchDashboardStats = async () => {
-  // Assuming a hypothetical /dashboard/stats endpoint
-  const res = await apiClient.get('/dashboard/stats').catch(() => ({
-    data: { totalCalls: 0, totalContacts: 0, recentActivity: [] }
-  }));
+  const res = await apiClient.get('/analytics/summary');
   return res.data;
 };
 
@@ -29,22 +26,37 @@ export default function DashboardScreen() {
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Phone color={colors.primary} size={32} />
-          <Text style={styles.statValue}>{data?.totalCalls || 0}</Text>
-          <Text style={styles.statLabel}>Total Calls</Text>
+          <Text style={styles.statValue}>{data?.totalCallsToday || 0}</Text>
+          <Text style={styles.statLabel}>Total Calls (Today)</Text>
+        </View>
+
+        <View style={styles.statCard}>
+          <PhoneOff color={colors.secondary} size={32} />
+          <Text style={styles.statValue}>{data?.missedCallsToday || 0}</Text>
+          <Text style={styles.statLabel}>Missed Calls</Text>
+        </View>
+      </View>
+
+      <View style={[styles.statsContainer, { marginTop: spacing.md }]}>
+        <View style={styles.statCard}>
+          <UserPlus color={colors.primary} size={32} />
+          <Text style={styles.statValue}>{data?.newContactsThisWeek || 0}</Text>
+          <Text style={styles.statLabel}>New Contacts (Week)</Text>
         </View>
 
         <View style={styles.statCard}>
           <Users color={colors.primary} size={32} />
-          <Text style={styles.statValue}>{data?.totalContacts || 0}</Text>
-          <Text style={styles.statLabel}>Contacts</Text>
+          <Text style={styles.statValue}>{data?.topCallers?.length || 0}</Text>
+          <Text style={styles.statLabel}>Top Callers</Text>
         </View>
       </View>
 
-      <Text style={styles.subHeader}>Recent Activity</Text>
-      {data?.recentActivity?.length > 0 ? (
-        data.recentActivity.map((activity: any, index: number) => (
+      <Text style={styles.subHeader}>Top Callers</Text>
+      {data?.topCallers?.length > 0 ? (
+        data.topCallers.map((contact: any, index: number) => (
           <View key={index} style={styles.activityRow}>
-            <Text style={styles.activityText}>{activity.description}</Text>
+            <Text style={styles.activityText}>{contact.name || contact.phoneNumber}</Text>
+            <Text style={{color: colors.textSecondary}}>{contact.callCount} calls</Text>
           </View>
         ))
       ) : (

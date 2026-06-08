@@ -5,7 +5,7 @@ import { logger } from '../../utils/logger';
 // POST /api/numbers
 export const createNumber = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.tenant!.id;
+    const tenantId = (req as any).tenant!.id;
     const { label } = req.body;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -62,7 +62,7 @@ export const getNumbers = async (req: Request, res: Response): Promise<void> => 
   try {
     // ALWAYS looks like this — tenantId first, always
     const numbers = await prisma.virtualNumber.findMany({
-      where: { tenantId: req.tenant!.id },
+      where: { tenantId: (req as any).tenant!.id },
     });
     res.json(numbers);
   } catch (error) {
@@ -74,7 +74,7 @@ export const getNumbers = async (req: Request, res: Response): Promise<void> => 
 // PUT /api/numbers/:id
 export const updateNumber = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.tenant!.id;
+    const tenantId = (req as any).tenant!.id;
     const { id } = req.params;
     const { label, isActive } = req.body;
 
@@ -105,7 +105,7 @@ export const updateNumber = async (req: Request, res: Response): Promise<void> =
 // DELETE /api/numbers/:id
 export const releaseNumber = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.tenant!.id;
+    const tenantId = (req as any).tenant!.id;
     const { id } = req.params;
 
     const existing = await prisma.virtualNumber.findFirst({

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-import * as Keychain from 'react-native-keychain';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../store/authStore';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000/api';
@@ -25,9 +25,9 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const credentials = await Keychain.getGenericPassword();
+        const credentials = await SecureStore.getItemAsync('tokens');
         if (credentials) {
-          const { refresh } = JSON.parse(credentials.password);
+          const { refresh } = JSON.parse(credentials);
           const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: refresh });
           const { token: newAccess, refreshToken: newRefresh } = res.data;
           
