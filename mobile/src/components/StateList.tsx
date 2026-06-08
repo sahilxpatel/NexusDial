@@ -11,6 +11,7 @@ interface StateListProps<T> {
   renderItem: ({ item }: { item: T }) => React.ReactElement;
   keyExtractor: (item: T) => string;
   emptyMessage?: string;
+  emptyIcon?: React.ReactElement;
 }
 
 const SkeletonItem = () => {
@@ -41,6 +42,7 @@ export function StateList<T>({
   renderItem,
   keyExtractor,
   emptyMessage = 'No data available',
+  emptyIcon,
 }: StateListProps<T>) {
   if (isLoading && !data) {
     return (
@@ -67,7 +69,7 @@ export function StateList<T>({
   if (!data || data.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Inbox color={colors.textSecondary} size={48} />
+        {emptyIcon ? emptyIcon : <Inbox color={colors.textSecondary} size={48} />}
         <Text style={styles.emptyText}>{emptyMessage}</Text>
       </View>
     );
