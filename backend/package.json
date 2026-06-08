@@ -4,7 +4,8 @@
   "description": "Backend for NexusDial",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "prisma:seed": "ts-node src/prisma/seed.ts"
   },
   "author": "",
   "license": "ISC",
