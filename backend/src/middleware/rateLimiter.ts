@@ -9,9 +9,9 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args),
+    sendCommand: (...args: string[]) => (redis as any).call(...args),
   }),
-  keyGenerator: (req: Request) => req.body.mobile || req.ip,
+  keyGenerator: (req: Request) => (req.body.mobile || req.ip || '') as string,
   message: { message: 'Too many auth requests, please try again later.' }
 });
 
@@ -21,8 +21,8 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args),
+    sendCommand: (...args: string[]) => (redis as any).call(...args),
   }),
-  keyGenerator: (req: Request) => req.tenant?.id || req.ip,
+  keyGenerator: (req: Request) => (req.tenant?.id || req.ip || '') as string,
   message: { message: 'Too many requests, please try again later.' }
 });

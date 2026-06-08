@@ -87,9 +87,9 @@ export const simulateCall = async (req: Request, res: Response, next: NextFuncti
     }
 
     res.json(callRecord);
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ errors: error.errors });
+      res.status(400).json({ errors: (error as any).errors });
     } else {
       logger.error('simulateCall error', error);
       res.status(500).json({ message: 'Internal Server Error' });

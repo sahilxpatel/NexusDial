@@ -1,36 +1,31 @@
-import { extractWithAI } from '../../src/services/ai.service';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+const mockCreate = jest.fn();
 
-jest.mock('@google/generative-ai', () => {
-  return {
-    GoogleGenerativeAI: jest.fn().mockImplementation(() => {
-      return {
-        getGenerativeModel: jest.fn().mockReturnValue({
-          generateContent: jest.fn()
-        })
-      };
-    })
-  };
+jest.mock('groq-sdk', () => {
+  return jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: mockCreate,
+      },
+    },
+  }));
 });
 
+import { extractWithAI } from '../../src/modules/intelligence/aiExtraction';
+
 describe('AI Extraction Unit Tests', () => {
-  let mockGenerateContent: jest.Mock;
-
-  beforeEach(() => {
-    const genAI = new GoogleGenerativeAI('test-key');
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    mockGenerateContent = model.generateContent as jest.Mock;
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   test('extracts name from transcript', async () => {
-    mockGenerateContent.mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({ name: 'Ramesh', intent: 'property inquiry', sentiment: 'neutral', callbackRequested: true })
-      }
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ name: 'Ramesh', intent: 'property inquiry', sentiment: 'neutral', callbackRequested: true })
+          }
+        }
+      ]
     });
 
     const result = await extractWithAI('Main Ramesh bol raha hoon...');
@@ -38,10 +33,14 @@ describe('AI Extraction Unit Tests', () => {
   });
 
   test('handles missing name gracefully', async () => {
-    mockGenerateContent.mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({ name: null, intent: 'complaint', sentiment: 'negative', callbackRequested: false })
-      }
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ name: null, intent: 'complaint', sentiment: 'negative', callbackRequested: false })
+          }
+        }
+      ]
     });
 
     const result = await extractWithAI('No one is answering.');
@@ -50,10 +49,14 @@ describe('AI Extraction Unit Tests', () => {
   });
 
   test('handles empty transcript', async () => {
-    mockGenerateContent.mockResolvedValue({
-      response: {
-        text: () => JSON.stringify({ name: null, intent: null, sentiment: 'neutral', callbackRequested: false })
-      }
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ name: null, intent: null, sentiment: 'neutral', callbackRequested: false })
+          }
+        }
+      ]
     });
 
     const result = await extractWithAI('');

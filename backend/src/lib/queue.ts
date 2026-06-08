@@ -2,5 +2,5 @@ import { Queue } from 'bullmq';
 import { redis } from './redis';
 
 export const intelligenceQueue = new Queue('intelligence', {
-  connection: redis,
+  connection: redis as any,
 });

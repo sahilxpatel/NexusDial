@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import { redis } from '../lib/redis';
 import { prisma } from '../lib/prisma';
 import { logger } from '../utils/logger';
-import { extractWithAI, ExtractedData } from '../services/ai.service';
+import { extractWithAI, ExtractedData } from '../modules/intelligence/aiExtraction';
 import { io } from '../server';
 
 const TRANSCRIPTS = [
@@ -99,7 +99,7 @@ export const intelligenceWorker = new Worker('intelligence', async (job) => {
   }
   
 }, {
-  connection: redis,
+  connection: redis as any,
   concurrency: 3,
 });
 

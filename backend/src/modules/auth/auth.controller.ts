@@ -43,7 +43,7 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
     res.json({ message: 'OTP sent successfully' });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ errors: error.errors });
+      res.status(400).json({ errors: (error as any).errors });
     } else {
       logger.error('sendOtp error', error);
       res.status(500).json({ message: 'Internal Server Error' });
@@ -107,7 +107,7 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
     res.json({ token, refreshToken: refreshTokenString });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ errors: error.errors });
+      res.status(400).json({ errors: (error as any).errors });
     } else {
       logger.error('verifyOtp error', error);
       res.status(500).json({ message: 'Internal Server Error' });
@@ -151,7 +151,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     res.json({ token, refreshToken: newRefreshTokenString });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ errors: error.errors });
+      res.status(400).json({ errors: (error as any).errors });
     } else {
       logger.error('refresh error', error);
       res.status(500).json({ message: 'Internal Server Error' });

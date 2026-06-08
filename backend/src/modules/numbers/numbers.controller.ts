@@ -11,7 +11,7 @@ export const createNumber = async (req: Request, res: Response): Promise<void> =
     const result = await prisma.$transaction(async (tx) => {
       const poolNumber = await tx.numberPool.findFirst({
         where: { isAssigned: false },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { id: 'asc' }
       });
 
       if (!poolNumber) {
@@ -79,7 +79,7 @@ export const updateNumber = async (req: Request, res: Response): Promise<void> =
     const { label, isActive } = req.body;
 
     const existing = await prisma.virtualNumber.findFirst({
-      where: { id, tenantId }
+      where: { id: id as string, tenantId }
     });
 
     if (!existing) {
@@ -88,7 +88,7 @@ export const updateNumber = async (req: Request, res: Response): Promise<void> =
     }
 
     const updated = await prisma.virtualNumber.update({
-      where: { id },
+      where: { id: id as string },
       data: {
         label: label !== undefined ? label : existing.label,
         isActive: isActive !== undefined ? isActive : existing.isActive
@@ -109,7 +109,7 @@ export const releaseNumber = async (req: Request, res: Response): Promise<void> 
     const { id } = req.params;
 
     const existing = await prisma.virtualNumber.findFirst({
-      where: { id, tenantId }
+      where: { id: id as string, tenantId }
     });
 
     if (!existing) {
@@ -124,7 +124,7 @@ export const releaseNumber = async (req: Request, res: Response): Promise<void> 
       });
 
       await tx.virtualNumber.delete({
-        where: { id }
+        where: { id: id as string }
       });
     });
 
